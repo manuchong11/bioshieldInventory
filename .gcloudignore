@@ -1,0 +1,10 @@
+.gcloudignore
+.git
+.gitignore
+.dockerignore
+.idea/
+.vscode/
+target/
+node_modules/
+.angular/
+dist/

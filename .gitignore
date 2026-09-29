@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Angular Monorepo Additions ###
+# Ignore the massive third-party dependencies folder
+/bioshield-frontend/node_modules/
+
+# Ignore local Angular build caches and output targets
+/bioshield-frontend/.angular/
+/bioshield-frontend/dist/
+/bioshield-frontend/tmp/

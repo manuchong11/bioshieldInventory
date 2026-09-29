@@ -1,0 +1,185 @@
+<!-- SECURE LOGIN SCREEN -->
+<div *ngIf="!isLoggedIn" class="login-container"
+  style="max-width: 400px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; text-align: center;">
+  <h2>🔒 BioShield Secure Login</h2>
+
+  <div *ngIf="loginError" style="color: red; margin-bottom: 15px;">{{ loginError }}</div>
+
+  <input type="text" [(ngModel)]="loginData.username" placeholder="Username"
+    style="width: 100%; padding: 10px; margin-bottom: 10px;" />
+  <input type="password" [(ngModel)]="loginData.password" placeholder="Password"
+    style="width: 100%; padding: 10px; margin-bottom: 15px;" />
+
+  <button (click)="onLogin()"
+    style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">Login</button>
+</div>
+<div *ngIf="isLoggedIn" class="dashboard-container">
+  <h2>🔬 Bioshield Medical Laboratory Equipment Management</h2>
+
+  <!-- System Warning Alerts -->
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    ⚠️ {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success">
+    ✅ {{ successMessage }}
+  </div>
+
+  <!-- Search Filter Tools Bar -->
+  <div class="filter-bar">
+    <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()"
+      placeholder="Search by Asset Tag, Name, or Location..." class="search-input" />
+
+    <select [(ngModel)]="statusFilter" (change)="applyFilters()" class="status-select">
+      <option value="">All Statuses</option>
+      <option *ngFor="let status of availableStatuses" [value]="status">
+        {{ status }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Main Multi-Column Grid Display -->
+  <div class="table-responsive">
+    <div class="report-header"
+      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+      <h3 style="margin: 0; color: #2c3e50;">Asset Inventory Report</h3>
+      <span style="font-weight: bold; color: #555;">
+        Report Generated: {{ currentDate | date:'medium' }}
+      </span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Asset Tag</th>
+          <th>Device Name</th>
+          <th>Manufacturer / Model</th>
+          <th>Serial Number</th>
+          <th>Location</th>
+          <th>Due Date</th>
+          <th>Operational Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let asset of filteredEquipment; trackBy: trackByAssetId">
+          <td class="bold-text">{{ asset.assetTag }}</td>
+          <td>{{ asset.name }}</td>
+          <td>{{ asset.manufacturer }} {{ asset.model }}</td>
+          <td>{{ asset.serialNumber }}</td>
+          <td>{{ asset.location }}</td>
+          <td>{{ asset.calibrationDueDate }}</td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'badge-active': asset.status === 'ACTIVE',
+              'badge-warn': asset.status === 'WARNING' || asset.status === 'IN_CALIBRATION',
+              'badge-danger': asset.status === 'EXPIRED' || asset.status === 'OUT_OF_SERVICE'
+            }">
+              {{ asset.status }}
+            </span>
+          </td>
+          <td>
+            <button (click)="onEditAsset(asset)" class="btn-edit" style="margin-right: 5px;">Edit</button>
+            <button (click)="onDeleteAsset(asset.id)" class="btn-delete">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="filteredEquipment.length === 0">
+          <td colspan="6" class="no-records">No medical equipment matches the current filter settings.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Asset Registration Entry Panel -->
+  <div class="registration-card">
+    <h3>📥 Register New Equipment Asset</h3>
+    <form (ngSubmit)="onCreateAsset()" #assetForm="ngForm" class="grid-form">
+      <div class="form-group">
+        <label>Asset Tag ID</label>
+        <input type="text" [(ngModel)]="newAsset.assetTag" name="assetTag" required placeholder="e.g. EQ-2026" />
+      </div>
+      <div class="form-group">
+        <label>Equipment Name</label>
+        <input type="text" [(ngModel)]="newAsset.name" name="name" required placeholder="e.g. H2-Incubator" />
+      </div>
+      <div class="form-group">
+        <label>Manufacturer</label>
+        <input type="text" [(ngModel)]="newAsset.manufacturer" name="manufacturer" required
+          placeholder="e.g. ThermoScientific" />
+      </div>
+      <div class="form-group">
+        <label>Model</label>
+        <input type="text" [(ngModel)]="newAsset.model" name="model" required placeholder="e.g. Heracell 150i" />
+      </div>
+      <div class="form-group">
+        <label>Serial Number</label>
+        <input type="text" [(ngModel)]="newAsset.serialNumber" name="serialNumber" required
+          placeholder="e.g. SN-98765432" />
+      </div>
+      <div class="form-group">
+        <label>Laboratory Location</label>
+        <input type="text" [(ngModel)]="newAsset.location" name="location" required
+          placeholder="e.g. Microbiology Room 4" />
+      </div>
+      <div class="form-group">
+        <label>Calibration Due Date</label>
+        <input type="date" [(ngModel)]="newAsset.calibrationDueDate" name="calibrationDueDate" />
+      </div>
+      <div class="form-group">
+        <label>Operational Status</label>
+        <select [(ngModel)]="newAsset.status" name="status" required class="search-input">
+          <option *ngFor="let status of availableStatuses" [value]="status">
+            {{ status }}
+          </option>
+        </select>
+      </div>
+      <button type="submit" [disabled]="!assetForm.form.valid" class="btn-submit">Add Asset to Inventory</button>
+    </form>
+  </div>
+
+  <div class="form-group">
+    <label>Equipment Category</label>
+    <select [(ngModel)]="newAsset.equipmentType" name="equipmentType" required class="search-input"
+      style="width: 100%; padding: 8px;">
+      <option value="THERMAL">Thermal Equipment</option>
+      <option value="ANALYZER">Analyzer Equipment</option>
+    </select>
+  </div>
+
+  <!-- IT Support Ticket Footer -->
+  <footer class="support-footer"
+    style="margin-top: 40px; padding: 20px; background-color: #f4f6f9; border-top: 1px solid #ddd; border-radius: 5px;">
+    <h3 style="margin-top: 0;">🛠️ Submit IT Support Ticket</h3>
+    <p style="font-size: 0.9em; color: #666;">Use this form to report bugs or interface anomalies directly to the IT
+      department.</p>
+
+    <div *ngIf="ticketSuccessMessage" class="alert alert-success"
+      style="padding: 10px; margin-bottom: 10px; background-color: #d4edda; color: #155724; border-radius: 4px;">
+      {{ ticketSuccessMessage }}
+    </div>
+    <div *ngIf="ticketErrorMessage" class="alert alert-danger"
+      style="padding: 10px; margin-bottom: 10px; background-color: #f8d7da; color: #721c24; border-radius: 4px;">
+      {{ ticketErrorMessage }}
+    </div>
+
+    <form (ngSubmit)="onSubmitTicket()" #ticketForm="ngForm"
+      style="display: flex; flex-direction: column; max-width: 600px; gap: 10px;">
+      <input type="text" [(ngModel)]="supportTicket.subject" name="subject" required placeholder="Ticket Subject"
+        style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;" />
+
+      <select [(ngModel)]="supportTicket.urgency" name="urgency" required
+        style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        <option value="Low">Low Urgency</option>
+        <option value="Medium">Medium Urgency</option>
+        <option value="High">High Urgency</option>
+      </select>
+
+      <textarea [(ngModel)]="supportTicket.description" name="description" required rows="4"
+        placeholder="Describe the issue..."
+        style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+
+      <button type="submit" [disabled]="!ticketForm.form.valid"
+        style="padding: 10px; background-color: #34495e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Submit
+        Ticket</button>
+    </form>
+  </footer>
+
+</div>

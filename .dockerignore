@@ -1,0 +1,9 @@
+.git
+.gitignore
+.idea
+.vscode
+target/
+!target/*.jar
+node_modules/
+bioshield-frontend/
+*.md
